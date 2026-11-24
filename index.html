@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: #1e293b;
+            --cell: #334155;
+            --cell-hover: #475569;
+            --x: #38bdf8;
+            --o: #fb7185;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --win: #22c55e;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at top, #1e293b, var(--bg));
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text);
+            padding: 20px;
+        }
+
+        .game {
+            width: 100%;
+            max-width: 420px;
+            background: var(--panel);
+            padding: 28px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            margin: 0 0 4px;
+            text-align: center;
+            font-size: 2rem;
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--muted);
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .controls select, .controls button {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            font-size: 0.9rem;
+            background: var(--cell);
+            color: var(--text);
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .controls select:hover, .controls button:hover { background: var(--cell-hover); }
+        .controls button:active { transform: scale(0.97); }
+
+        .status {
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            min-height: 28px;
+            margin-bottom: 14px;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .cell {
+            aspect-ratio: 1 / 1;
+            background: var(--cell);
+            border: none;
+            border-radius: 12px;
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background 0.2s, transform 0.1s, color 0.2s;
+            line-height: 1;
+            padding: 0;
+        }
+
+        .cell:hover:not(.taken) { background: var(--cell-hover); }
+        .cell:active:not(.taken) { transform: scale(0.94); }
+        .cell.x { color: var(--x); }
+        .cell.o { color: var(--o); }
+        .cell.win { background: rgba(34, 197, 94, 0.25); color: var(--win); }
+        .cell.taken { cursor: default; }
+
+        .scoreboard {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding-top: 18px;
+            border-top: 1px solid var(--cell);
+            text-align: center;
+        }
+
+        .scoreboard div { flex: 1; }
+        .scoreboard .label { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
+        .scoreboard .value { font-size: 1.6rem; font-weight: bold; margin-top: 4px; }
+        .score-x { color: var(--x); }
+        .score-o { color: var(--o); }
+
+        .reset-scores {
+            display: block;
+            margin: 16px auto 0;
+            background: transparent;
+            border: 1px solid var(--cell-hover);
+            color: var(--muted);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .reset-scores:hover { color: var(--text); border-color: var(--muted); }
+    </style>
+</head>
+<body>
+    <div class="game">
+        <h1>Tic Tac Toe</h1>
+        <p class="subtitle">Classic 3-in-a-row</p>
+
+        <div class="controls">
+            <select id="mode" aria-label="Game mode">
+                <option value="pvp">Two Players</option>
+                <option value="pve"> vs Computer</option>
+            </select>
+            <select id="difficulty" aria-label="Difficulty" disabled>
+                <option value="easy">Easy</option>
+                <option value="hard">Impossible</option>
+            </select>
+            <button id="new-game">New Game</button>
+        </div>
+
+        <div class="status" id="status">Player X's turn</div>
+
+        <div class="board" id="board">
+            <button class="cell" data-index="0"></button>
+            <button class="cell" data-index="1"></button>
+            <button class="cell" data-index="2"></button>
+            <button class="cell" data-index="3"></button>
+            <button class="cell" data-index="4"></button>
+            <button class="cell" data-index="5"></button>
+            <button class="cell" data-index="6"></button>
+            <button class="cell" data-index="7"></button>
+            <button class="cell" data-index="8"></button>
+        </div>
+
+        <div class="scoreboard">
+            <div><div class="label">Player X</div><div class="value score-x" id="score-x">0</div></div>
+            <div><div class="label">Draws</div><div class="value" id="score-draw">0</div></div>
+            <div><div class="label">Player O</div><div class="value score-o" id="score-o">0</div></div>
+        </div>
+
+        <button class="reset-scores" id="reset-scores">Reset scores</button>
+    </div>
+
+    <script>
+        const boardEl = document.getElementById('board');
+        const statusEl = document.getElementById('status');
+        const modeEl = document.getElementById('mode');
+        const difficultyEl = document.getElementById('difficulty');
+        const cells = Array.from(document.querySelectorAll('.cell'));
+
+        const WIN_LINES = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        let board = Array(9).fill('');
+        let currentPlayer = 'X';
+        let gameOver = false;
+        let scores = { X: 0, O: 0, draw: 0 };
+
+        const isPvE = () => modeEl.value === 'pve';
+        const computer = 'O';
+
+        function setStatus(text) { statusEl.textContent = text; }
+
+        function render() {
+            cells.forEach((cell, i) => {
+                cell.textContent = board[i];
+                cell.className = 'cell' + (board[i] ? ' taken ' + board[i].toLowerCase() : '');
+            });
+            updateScoreboard();
+        }
+
+        function updateScoreboard() {
+            document.getElementById('score-x').textContent = scores.X;
+            document.getElementById('score-o').textContent = scores.O;
+            document.getElementById('score-draw').textContent = scores.draw;
+        }
+
+        function getWinner(b) {
+            for (const line of WIN_LINES) {
+                const [a, c, d] = line;
+                if (b[a] && b[a] === b[c] && b[a] === b[d]) {
+                    return { player: b[a], line };
+                }
+            }
+            return null;
+        }
+
+        function isFull(b) { return b.every(v => v !== ''); }
+
+        function endGame(winner) {
+            gameOver = true;
+            if (winner) {
+                winner.line.forEach(i => cells[i].classList.add('win'));
+                scores[winner.player]++;
+                if (isPvE()) {
+                    setStatus(winner.player === 'X' ? 'You win! 🎉' : 'Computer wins! 🤖');
+                } else {
+                    setStatus(`Player ${winner.player} wins! 🎉`);
+                }
+            } else {
+                scores.draw++;
+                setStatus("It's a draw! 🤝");
+            }
+            updateScoreboard();
+        }
+
+        function switchPlayer() {
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            if (isPvE()) {
+                setStatus(currentPlayer === 'X' ? "Your turn (X)" : "Computer's turn (O)");
+            } else {
+                setStatus(`Player ${currentPlayer}'s turn`);
+            }
+        }
+
+        function play(index) {
+            if (gameOver || board[index] !== '') return;
+            board[index] = currentPlayer;
+            render();
+
+            const winner = getWinner(board);
+            if (winner) {
+                endGame(winner);
+                return;
+            }
+            if (isFull(board)) {
+                endGame(null);
+                return;
+            }
+
+            switchPlayer();
+
+            if (isPvE() && currentPlayer === computer && !gameOver) {
+                setStatus("Computer's turn (O)");
+                cells.forEach(c => c.style.pointerEvents = 'none');
+                setTimeout(computerMove, 350);
+            }
+        }
+
+        // Minimax AI: returns the best score for the given player.
+        function minimax(b, depth, isMaximizing, ai, human) {
+            const winner = getWinner(b);
+            if (winner) return winner.player === ai ? 10 - depth : depth - 10;
+            if (isFull(b)) return 0;
+
+            if (isMaximizing) {
+                let best = -Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (b[i] === '') {
+                        b[i] = ai;
+                        best = Math.max(best, minimax(b, depth + 1, false, ai, human));
+                        b[i] = '';
+                    }
+                }
+                return best;
+            } else {
+                let best = Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (b[i] === '') {
+                        b[i] = human;
+                        best = Math.min(best, minimax(b, depth + 1, true, ai, human));
+                        b[i] = '';
+                    }
+                }
+                return best;
+            }
+        }
+
+        function emptyIndices(b) {
+            const result = [];
+            for (let i = 0; i < 9; i++) if (b[i] === '') result.push(i);
+            return result;
+        }
+
+        function computerMove() {
+            if (gameOver) { cells.forEach(c => c.style.pointerEvents = 'auto'); return; }
+            const empties = emptyIndices(board);
+            let choice;
+
+            if (difficultyEl.value === 'easy') {
+                choice = empties[Math.floor(Math.random() * empties.length)];
+            } else {
+                let bestScore = -Infinity;
+                for (const i of empties) {
+                    board[i] = computer;
+                    const score = minimax(board, 0, false, computer, 'X');
+                    board[i] = '';
+                    if (score > bestScore) {
+                        bestScore = score;
+                        choice = i;
+                    }
+                }
+            }
+
+            cells.forEach(c => c.style.pointerEvents = 'auto');
+            play(choice);
+        }
+
+        function newGame() {
+            board = Array(9).fill('');
+            currentPlayer = 'X';
+            gameOver = false;
+            cells.forEach(c => c.style.pointerEvents = 'auto');
+            render();
+            setStatus(isPvE() ? 'Your turn (X)' : "Player X's turn");
+        }
+
+        cells.forEach(cell => {
+            cell.addEventListener('click', () => play(Number(cell.dataset.index)));
+        });
+
+        document.getElementById('new-game').addEventListener('click', newGame);
+
+        document.getElementById('reset-scores').addEventListener('click', () => {
+            scores = { X: 0, O: 0, draw: 0 };
+            updateScoreboard();
+        });
+
+        modeEl.addEventListener('change', () => {
+            difficultyEl.disabled = !isPvE();
+            newGame();
+        });
+
+        difficultyEl.addEventListener('change', newGame);
+
+        render();
+        setStatus("Player X's turn");
+    </script>
+</body>
+</html>
